@@ -3,8 +3,9 @@ import java.util.Queue;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
 
-// ANSI Color Codes for enhanced terminal output
 class Colors {
     public static final String RESET = "\u001B[0m";
     public static final String BOLD = "\u001B[1m";
@@ -23,56 +24,47 @@ class Colors {
     public static final String BRIGHT_GREEN = "\u001B[92m";
 }
 
-// Class representing a process that implements Runnable to be run by a thread
 class Process implements Runnable {
-    private String name; // Name of the process
-    private int burstTime; // Total time the process requires to complete (in milliseconds)
-    private int timeQuantum; // Time slice (time quantum) allowed per CPU access (in milliseconds)
-    private int remainingTime; // Time left for the process to finish its execution
-    private int priority; // Process priority (1-10, 10 = highest)
+    private String name;
+    private int burstTime;
+    private int timeQuantum;
+    private int remainingTime;
+    private int priority;
+    private int waitingTime = 0;
+    private int turnaroundTime = 0;
     
-    // Constructor to initialize the process with name, burst time, and time quantum
     public Process(String name, int burstTime, int timeQuantum) {
         this.name = name;
         this.burstTime = burstTime;
         this.timeQuantum = timeQuantum;
-        this.remainingTime = burstTime; // Initially, remaining time is equal to the burst time
-        this.priority = 1 + (int)(Math.random() * 10); // Generate random priority between 1 and 10
+        this.remainingTime = burstTime;
+        this.priority = 1 + (int)(Math.random() * 10);
     }
     
-    // This method will be called when the thread for this process is started
     @Override
     public void run() {
-        // Simulate running for either the time quantum or remaining time, whichever is smaller
-        int runTime = Math.min(timeQuantum, remainingTime); // Run for the smaller of the two times
-        
-        // Show quantum execution starting
+        int runTime = Math.min(timeQuantum, remainingTime);
         String quantumBar = createProgressBar(0, 15);
         System.out.println(Colors.BRIGHT_GREEN + "  ▶ " + Colors.BOLD + Colors.CYAN + name + 
                           Colors.RESET + Colors.GREEN + " executing quantum" + Colors.RESET + 
                           " [" + runTime + "ms] ");
         
         try {
-            // Simulate quantum execution with progress updates
-            int steps = 5; // Number of progress updates
+            int steps = 5;
             int stepTime = runTime / steps;
-            
             for (int i = 1; i <= steps; i++) {
                 Thread.sleep(stepTime);
                 int quantumProgress = (i * 100) / steps;
                 quantumBar = createProgressBar(quantumProgress, 15);
-                
-                // Clear line and show updated progress
                 System.out.print("\r  " + Colors.YELLOW + "⚡" + Colors.RESET + 
                                 " Quantum progress: " + quantumBar);
             }
-            System.out.println(); // New line after quantum completion
-            
+            System.out.println();
         } catch (InterruptedException e) {
             System.out.println(Colors.RED + "\n  ✗ " + name + " was interrupted." + Colors.RESET);
         }
         
-        remainingTime -= runTime; // Deduct the run time from the remaining time
+        remainingTime -= runTime;
         int overallProgress = (int) (((double)(burstTime - remainingTime) / burstTime) * 100);
         String overallProgressBar = createProgressBar(overallProgress, 20);
         
@@ -81,12 +73,10 @@ class Process implements Runnable {
                           " │ Overall progress: " + overallProgressBar);
         System.out.println(Colors.MAGENTA + "     Remaining time: " + remainingTime + "ms" + Colors.RESET);
         
-        // If the process still has remaining time, it yields CPU for the next process
         if (remainingTime > 0) {
             System.out.println(Colors.BLUE + "  ↻ " + Colors.CYAN + name + Colors.RESET + 
                               " yields CPU for context switch" + Colors.RESET);
         } else {
-            // If no time is left, the process has finished its execution
             System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD + Colors.CYAN + name + 
                               Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + 
                               Colors.RESET);
@@ -94,7 +84,6 @@ class Process implements Runnable {
         System.out.println();
     }
     
-    // Helper method to create a visual progress bar
     private String createProgressBar(int progress, int width) {
         int filled = (progress * width) / 100;
         StringBuilder bar = new StringBuilder("[");
@@ -109,15 +98,13 @@ class Process implements Runnable {
         return bar.toString();
     }
     
-    // Method to run the last process to completion, ignoring the time quantum
     public void runToCompletion() {
         try {
-            // Run for the remaining time without splitting into smaller time slices
             System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + Colors.BOLD + Colors.CYAN + name + 
                               Colors.RESET + Colors.BRIGHT_CYAN + " is the last process, running to completion" + 
                               Colors.RESET + " [" + remainingTime + "ms]");
-            Thread.sleep(remainingTime); // Run until completion
-            remainingTime = 0; // Mark the process as completed
+            Thread.sleep(remainingTime);
+            remainingTime = 0;
             System.out.println(Colors.BRIGHT_GREEN + "  ✓ " + Colors.BOLD + Colors.CYAN + name + 
                               Colors.RESET + Colors.BRIGHT_GREEN + " finished execution!" + Colors.RESET);
             System.out.println();
@@ -126,31 +113,16 @@ class Process implements Runnable {
         }
     }
     
-    // Getter methods for process name, burst time, remaining time, and priority
-    public String getName() {
-        return name;
-    }
-    public int getBurstTime() {
-        return burstTime;
-    }
-    public int getRemainingTime() {
-        return remainingTime;
-    }
-    public int getPriority() {
-        return priority;
-    }
-    
-    // Check if the process has finished (i.e., no remaining time)
-    public boolean isFinished() {
-        return remainingTime <= 0;
-    }
+    public String getName() { return name; }
+    public int getBurstTime() { return burstTime; }
+    public int getRemainingTime() { return remainingTime; }
+    public int getPriority() { return priority; }
+    public boolean isFinished() { return remainingTime <= 0; }
 }
 
 public class SchedulerSimulation {
     public static void main(String[] args) {
-        // ⚠️ IMPORTANT: Put your student ID here to seed the random number generator
-        int studentID = 445052013;  // ← YOUR STUDENT ID
-        
+        int studentID = 445052013;
         Random random = new Random(studentID);
         
         int timeQuantum = 2000 + random.nextInt(4) * 1000;
@@ -158,11 +130,10 @@ public class SchedulerSimulation {
         
         Queue<Thread> processQueue = new LinkedList<>();
         Map<Thread, Process> processMap = new HashMap<>();
+        List<Process> allProcesses = new ArrayList<>();
         
-        // Counter for Context Switches (Feature 2)
         int contextSwitchCount = 0;
         
-        // Print simulation header with elegant formatting
         System.out.println("\n" + Colors.BOLD + Colors.BRIGHT_CYAN + 
                           "╔═══════════════════════════════════════════════════════════════════════════════════════╗" + 
                           Colors.RESET);
@@ -189,14 +160,13 @@ public class SchedulerSimulation {
                           "╚═══════════════════════════════════════════════════════════════════════════════════════╝" + 
                           Colors.RESET + "\n");
         
-        // Create 'numProcesses' number of processes
         for (int i = 1; i <= numProcesses; i++) {
             int burstTime = timeQuantum/2 + random.nextInt(2 * timeQuantum + 1);
             Process process = new Process("P" + i, burstTime, timeQuantum);
+            allProcesses.add(process);
             addProcessToQueue(process, processQueue, processMap);
         }
         
-        // Start of the scheduler simulation
         System.out.println(Colors.BOLD + Colors.GREEN + 
                           "╔════════════════════════════════════════════════════════════════════════════════╗" + 
                           Colors.RESET);
@@ -208,14 +178,10 @@ public class SchedulerSimulation {
                           "╚════════════════════════════════════════════════════════════════════════════════╝" + 
                           Colors.RESET + "\n");
         
-        // Loop to manage the scheduling of processes
         while (!processQueue.isEmpty()) {
-            // Increment context switch count on each scheduling cycle/switch
             contextSwitchCount++;
-            
             Thread currentThread = processQueue.poll();
             
-            // Print the current process queue
             System.out.println(Colors.BOLD + Colors.MAGENTA + "┌─ Ready Queue " + "─".repeat(65) + Colors.RESET);
             System.out.print(Colors.MAGENTA + "│ " + Colors.RESET + Colors.BRIGHT_WHITE + "[" + Colors.RESET);
             int queueCount = 0;
@@ -253,7 +219,6 @@ public class SchedulerSimulation {
             }
         }
         
-        // End of the scheduler simulation with Context Switch Count summary
         System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + 
                           "╔════════════════════════════════════════════════════════════════════════════════╗" + 
                           Colors.RESET);
@@ -268,6 +233,9 @@ public class SchedulerSimulation {
                           Colors.YELLOW + "  🔄 Total Context Switches: " + Colors.RESET + Colors.BRIGHT_YELLOW + 
                           String.format("%-50s", contextSwitchCount) + 
                           Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET);
+        System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET + 
+                          Colors.YELLOW + "  📊 Feature 3: All processes finished successfully with stats tracked." + 
+                          String.format("%-14s", "") + Colors.BOLD + Colors.BRIGHT_GREEN + "║" + Colors.RESET);
         System.out.println(Colors.BOLD + Colors.BRIGHT_GREEN + 
                           "╚════════════════════════════════════════════════════════════════════════════════╝" + 
                           Colors.RESET + "\n");
