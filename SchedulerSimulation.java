@@ -29,15 +29,17 @@ class Process implements Runnable {
     private int burstTime; // Total time the process requires to complete (in milliseconds)
     private int timeQuantum; // Time slice (time quantum) allowed per CPU access (in milliseconds)
     private int remainingTime; // Time left for the process to finish its execution
-
+    private int priority; // Process priority (1-10, 10 = highest)
+    
     // Constructor to initialize the process with name, burst time, and time quantum
     public Process(String name, int burstTime, int timeQuantum) {
         this.name = name;
         this.burstTime = burstTime;
         this.timeQuantum = timeQuantum;
         this.remainingTime = burstTime; // Initially, remaining time is equal to the burst time
+        this.priority = 1 + (int)(Math.random() * 10); // Generate random priority between 1 and 10
     }
-
+    
     // This method will be called when the thread for this process is started
     @Override
     public void run() {
@@ -106,7 +108,7 @@ class Process implements Runnable {
         bar.append("] ").append(progress).append("%");
         return bar.toString();
     }
-
+    
     // Method to run the last process to completion, ignoring the time quantum
     public void runToCompletion() {
         try {
@@ -123,20 +125,21 @@ class Process implements Runnable {
             System.out.println(Colors.RED + "  ✗ " + name + " was interrupted." + Colors.RESET);
         }
     }
-
-    // Getter methods for process name, burst time, and remaining time
+    
+    // Getter methods for process name, burst time, remaining time, and priority
     public String getName() {
         return name;
     }
-
     public int getBurstTime() {
         return burstTime;
     }
-
     public int getRemainingTime() {
         return remainingTime;
     }
-
+    public int getPriority() {
+        return priority;
+    }
+    
     // Check if the process has finished (i.e., no remaining time)
     public boolean isFinished() {
         return remainingTime <= 0;
@@ -147,7 +150,7 @@ public class SchedulerSimulation {
     public static void main(String[] args) {
         // ⚠️ IMPORTANT: Put your student ID here to seed the random number generator
         // This makes your output unique to you - DO NOT forget to change this!
-        int studentID = 445052013;  // ← CHANGE THIS TO YOUR ACTUAL STUDENT ID
+        int studentID = 445052013;  // ← YOUR STUDENT ID
         
         Random random = new Random(studentID);
         
@@ -278,7 +281,7 @@ public class SchedulerSimulation {
                           Colors.RESET + "\n");
     }
     
-    // Method to add a process to the queue and map, while printing a "ready" message
+    // Method to add a process to the queue and map, while printing a "ready" message with priority
     public static void addProcessToQueue(Process process, Queue<Thread> processQueue, 
                                         Map<Thread, Process> processMap) {
         // Create a new thread to run the process
@@ -290,10 +293,11 @@ public class SchedulerSimulation {
         // Map the thread to the process, so we can track the process associated with each thread
         processMap.put(thread, process);
         
-        // Print a message indicating the process has entered the ready queue
+        // Print a message indicating the process has entered the ready queue including its priority
         System.out.println(Colors.BLUE + "  ➕ " + Colors.BOLD + Colors.CYAN + process.getName() + 
                           Colors.RESET + Colors.BLUE + " added to ready queue" + Colors.RESET + 
-                          " │ Burst time: " + Colors.YELLOW + process.getBurstTime() + "ms" + 
+                          " │ Priority: " + Colors.BRIGHT_YELLOW + process.getPriority() + 
+                          Colors.RESET + " │ Burst time: " + Colors.YELLOW + process.getBurstTime() + "ms" + 
                           Colors.RESET);
     }
 }
